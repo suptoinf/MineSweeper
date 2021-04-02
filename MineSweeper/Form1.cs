@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Media;
 
 namespace MineSweeper
 {
@@ -22,14 +23,44 @@ namespace MineSweeper
 
 		Difficulty difficulty = Difficulty.simple;
 
-		private List<Button> ButtonList = new List<Button>();
-		private Button btns = new Button();
+		private List<MyButton> ButtonList = new List<MyButton>();
+		private MyButton btns = new MyButton();
 		Label TimeSpent = new Label();
 		Label MineRemian = new Label();
 		PictureBox TimeImage = new PictureBox();
 		PictureBox MineImage = new PictureBox();
-		private int RemainingSafe;
+		//private int RemainingSafe;
+		//private int BoomedMine;
 		private bool IsFailed;
+
+		private int remainingSafe;
+		public int RemainingSafe
+		{
+			get { return remainingSafe; }
+			set
+			{
+				if (value != remainingSafe)
+				{
+					remainingSafe = value;
+					ChangeValue();
+				}
+			}
+		}
+
+		private int boomedMine;
+		public int BoomedMine
+		{
+			get => boomedMine;
+			set
+			{
+				if (value != boomedMine)
+				{
+					boomedMine = value;
+					ChangeValue();
+				}
+				boomedMine = value;
+			}
+		}
 
 		public Form1()
 		{
@@ -41,6 +72,7 @@ namespace MineSweeper
 			IsFailed = false;
 			mine = new Mine();
 			RemainingSafe = mine.Columns * mine.Rows - mine.MineCount;
+			BoomedMine = 0;
 			AddButton(mine.Rows, mine.Columns);
 		}
 
@@ -68,6 +100,7 @@ namespace MineSweeper
 			IsFailed = false;
 			mine = new Mine();
 			RemainingSafe = mine.Columns * mine.Rows - mine.MineCount;
+			BoomedMine = 0;
 			RemoveButton();
 			AddButton(mine.Rows, mine.Columns);
 		}
@@ -79,6 +112,7 @@ namespace MineSweeper
 			IsFailed = false;
 			mine = new Mine(16, 16, 40);
 			RemainingSafe = mine.Columns * mine.Rows - mine.MineCount;
+			BoomedMine = 0;
 			RemoveButton();
 			AddButton(mine.Rows, mine.Columns);
 		}
@@ -90,6 +124,7 @@ namespace MineSweeper
 			IsFailed = false;
 			mine = new Mine(16, 30, 99);
 			RemainingSafe = mine.Columns * mine.Rows - mine.MineCount;
+			BoomedMine = 0;
 			RemoveButton();
 			AddButton(mine.Rows, mine.Columns);
 		}
@@ -129,7 +164,7 @@ namespace MineSweeper
 		{
 			for (int i = 0; i < columns * rows; i++)
 			{
-				btns = new Button();
+				btns = new MyButton();
 				btns.Name = string.Format("{0}", i);
 				btns.Text = "";
 				btns.Font = new Font("Calibli", 15F);
@@ -142,6 +177,7 @@ namespace MineSweeper
 				this.Controls.Add(btns);
 				btns.Click += new EventHandler(btns_Click);
 				btns.MouseDown += new MouseEventHandler(btns_MouseDown);
+				btns.DoubleClick += Btns_DoubleClick;
 				btns.TextChanged += Btns_TextChanged;
 				ButtonList.Add(btns);
 			}
@@ -184,9 +220,122 @@ namespace MineSweeper
 			Controls.Add(MineImage);
 		}
 
+		private void Btns_DoubleClick(object sender, EventArgs e)
+		{
+			MyButton button = (MyButton)sender;
+			int index = Convert.ToInt32(button.Name);
+			int columns = mine.Columns;
+			int rows = mine.Rows;
+			int num = -1;
+			int count = 0;
+			try
+			{
+				num = Convert.ToInt32(button.Text);
+			}
+			catch (Exception)
+			{
+
+			}
+
+			for (int i = -1; i <= 1; i++)
+			{
+				if ((index / columns == 0 && i == -1) || (index / columns == rows - 1 && i == 1))
+				{
+					continue;
+				}
+				for (int j = -1; j <= 1; j++)
+				{
+					if ((index % columns == 0 && j == -1) || (index % columns == columns - 1 && j == 1))
+					{
+						continue;
+					}
+					if (ButtonList[index + columns * i + j].Text == "🚩")
+					{
+						count++;
+					}
+				}
+			}
+			if (num == count)
+			{
+				if (index / columns == 0)
+				{
+					if (index == 0)
+					{
+						ClickButton(ButtonList[index + 1]);
+						ClickButton(ButtonList[index + columns]);
+						ClickButton(ButtonList[index + columns + 1]);
+					}
+					else if (index == columns - 1)
+					{
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index + columns]);
+						ClickButton(ButtonList[index + columns - 1]);
+					}
+					else
+					{
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index + 1]);
+						ClickButton(ButtonList[index + columns - 1]);
+						ClickButton(ButtonList[index + columns]);
+						ClickButton(ButtonList[index + columns + 1]);
+					}
+				}
+				else if (index / columns == rows - 1)
+				{
+					if (index == (rows - 1) * columns)
+					{
+						ClickButton(ButtonList[index + 1]);
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - columns + 1]);
+					}
+					else if (index == rows * columns - 1)
+					{
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - columns - 1]);
+					}
+					else
+					{
+						ClickButton(ButtonList[index - columns - 1]);
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - columns + 1]);
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index + 1]);
+					}
+				}
+				else if (index % columns == 0)
+				{
+					ClickButton(ButtonList[index - columns]);
+					ClickButton(ButtonList[index - columns + 1]);
+					ClickButton(ButtonList[index + 1]);
+					ClickButton(ButtonList[index + columns]);
+					ClickButton(ButtonList[index + columns + 1]);
+				}
+				else if (index % columns == columns - 1)
+				{
+					ClickButton(ButtonList[index - columns - 1]);
+					ClickButton(ButtonList[index - columns]);
+					ClickButton(ButtonList[index - 1]);
+					ClickButton(ButtonList[index + columns - 1]);
+					ClickButton(ButtonList[index + columns]);
+				}
+				else
+				{
+					ClickButton(ButtonList[index - columns - 1]);
+					ClickButton(ButtonList[index - columns]);
+					ClickButton(ButtonList[index - columns + 1]);
+					ClickButton(ButtonList[index - 1]);
+					ClickButton(ButtonList[index + 1]);
+					ClickButton(ButtonList[index + columns - 1]);
+					ClickButton(ButtonList[index + columns]);
+					ClickButton(ButtonList[index + columns + 1]);
+				}
+			}
+		}
+
 		private void Btns_TextChanged(object sender, EventArgs e)
 		{
-			Button button = (Button)sender;
+			MyButton button = (MyButton)sender;
 			switch (button.Text)
 			{
 				default:
@@ -221,18 +370,27 @@ namespace MineSweeper
 			}
 		}
 
+		private void ChangeValue()
+		{
+			if (RemainingSafe == 0 && BoomedMine == mine.MineCount)
+			{
+				MessageBox.Show("遗憾，你失败了");
+			}
+		}
+
 		private void btns_Click(object sender, EventArgs e)
 		{
-			if (!timer1.Enabled && !IsFailed)
-			{
-				timer1.Enabled = true;
-			}
-			Button button = (Button)sender;
-			button.Click -= new EventHandler(btns_Click);
+			MyButton button = (MyButton)sender;
 			if (button.Text == "🚩" || button.Text == "❓")
 			{
 				return;
 			}
+			if (!timer1.Enabled && !IsFailed)
+			{
+				timer1.Enabled = true;
+			}
+			button.Click -= btns_Click;
+			button.IsClicked = true;
 			int index = Convert.ToInt32(button.Name);
 			int columns = mine.Columns;
 			int rows = mine.Rows;
@@ -243,20 +401,22 @@ namespace MineSweeper
 				{
 					timer1.Enabled = false;
 					//MessageBox.Show("失败");
+					IsFailed = true;
 				}
-				IsFailed = true;
-				//button.BackgroundImage = Image.FromFile("地雷红.png");
+				//IsFailed = true;
+				BoomedMine++;
 				button.BackgroundImage = Properties.Resources.地雷红;
 				button.BackgroundImageLayout = ImageLayout.Stretch;
 				button.BackColor = Color.White;
 				button.FlatAppearance.BorderColor = Color.Gray;
-				foreach (Button item in ButtonList)
+				foreach (MyButton item in ButtonList)
 				{
 					if (item.Text == "🚩" || item.Text == "❓")
 					{
 						item.Text = "";
 					}
-					item.PerformClick();
+					//item.PerformClick();
+					ClickButton(item);
 				}
 			}
 			else
@@ -285,91 +445,150 @@ namespace MineSweeper
 					{
 						if (index == 0)
 						{
-							ButtonList[index + 1].PerformClick();
+							/*ButtonList[index + 1].PerformClick();
 							ButtonList[index + columns].PerformClick();
-							ButtonList[index + columns + 1].PerformClick();
+							ButtonList[index + columns + 1].PerformClick();*/
+							ClickButton(ButtonList[index + 1]);
+							ClickButton(ButtonList[index + columns]);
+							ClickButton(ButtonList[index + columns + 1]);
 						}
 						else if (index == columns - 1)
 						{
-							ButtonList[index - 1].PerformClick();
+							/*ButtonList[index - 1].PerformClick();
 							ButtonList[index + columns].PerformClick();
-							ButtonList[index + columns - 1].PerformClick();
+							ButtonList[index + columns - 1].PerformClick();*/
+							ClickButton(ButtonList[index - 1]);
+							ClickButton(ButtonList[index + columns]);
+							ClickButton(ButtonList[index + columns - 1]);
 						}
 						else
 						{
-							ButtonList[index - 1].PerformClick();
+							/*ButtonList[index - 1].PerformClick();
 							ButtonList[index + 1].PerformClick();
 							ButtonList[index + columns - 1].PerformClick();
 							ButtonList[index + columns].PerformClick();
-							ButtonList[index + columns + 1].PerformClick();
+							ButtonList[index + columns + 1].PerformClick();*/
+							ClickButton(ButtonList[index - 1]);
+							ClickButton(ButtonList[index + 1]);
+							ClickButton(ButtonList[index + columns - 1]);
+							ClickButton(ButtonList[index + columns]);
+							ClickButton(ButtonList[index + columns + 1]);
 						}
 					}
 					else if (index / columns == rows - 1)
 					{
 						if (index == (rows - 1) * columns)
 						{
-							ButtonList[index + 1].PerformClick();
+							/*ButtonList[index + 1].PerformClick();
 							ButtonList[index - columns].PerformClick();
-							ButtonList[index - columns + 1].PerformClick();
+							ButtonList[index - columns + 1].PerformClick();*/
+							ClickButton(ButtonList[index + 1]);
+							ClickButton(ButtonList[index - columns]);
+							ClickButton(ButtonList[index - columns + 1]);
 						}
 						else if (index == rows * columns - 1)
 						{
-							ButtonList[index - 1].PerformClick();
+							/*ButtonList[index - 1].PerformClick();
 							ButtonList[index - columns].PerformClick();
-							ButtonList[index - columns - 1].PerformClick();
+							ButtonList[index - columns - 1].PerformClick();*/
+							ClickButton(ButtonList[index - 1]);
+							ClickButton(ButtonList[index - columns]);
+							ClickButton(ButtonList[index - columns - 1]);
 						}
 						else
 						{
-							ButtonList[index - columns - 1].PerformClick();
+							/*ButtonList[index - columns - 1].PerformClick();
 							ButtonList[index - columns].PerformClick();
 							ButtonList[index - columns + 1].PerformClick();
 							ButtonList[index - 1].PerformClick();
-							ButtonList[index + 1].PerformClick();
+							ButtonList[index + 1].PerformClick();*/
+							ClickButton(ButtonList[index - columns - 1]);
+							ClickButton(ButtonList[index - columns]);
+							ClickButton(ButtonList[index - columns + 1]);
+							ClickButton(ButtonList[index - 1]);
+							ClickButton(ButtonList[index + 1]);
 						}
 					}
 					else if (index % columns == 0)
 					{
-						ButtonList[index - columns].PerformClick();
+						/*ButtonList[index - columns].PerformClick();
 						ButtonList[index - columns + 1].PerformClick();
 						ButtonList[index + 1].PerformClick();
 						ButtonList[index + columns].PerformClick();
-						ButtonList[index + columns + 1].PerformClick();
+						ButtonList[index + columns + 1].PerformClick();*/
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - columns + 1]);
+						ClickButton(ButtonList[index + 1]);
+						ClickButton(ButtonList[index + columns]);
+						ClickButton(ButtonList[index + columns + 1]);
 					}
 					else if (index % columns == columns - 1)
 					{
-						ButtonList[index - columns - 1].PerformClick();
+						/*ButtonList[index - columns - 1].PerformClick();
 						ButtonList[index - columns].PerformClick();
 						ButtonList[index - 1].PerformClick();
 						ButtonList[index + columns - 1].PerformClick();
-						ButtonList[index + columns].PerformClick();
+						ButtonList[index + columns].PerformClick();*/
+						ClickButton(ButtonList[index - columns - 1]);
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index + columns - 1]);
+						ClickButton(ButtonList[index + columns]);
 					}
 					else
 					{
-						ButtonList[index - columns - 1].PerformClick();
+						/*ButtonList[index - columns - 1].PerformClick();
 						ButtonList[index - columns].PerformClick();
 						ButtonList[index - columns + 1].PerformClick();
 						ButtonList[index - 1].PerformClick();
 						ButtonList[index + 1].PerformClick();
 						ButtonList[index + columns - 1].PerformClick();
 						ButtonList[index + columns].PerformClick();
-						ButtonList[index + columns + 1].PerformClick();
+						ButtonList[index + columns + 1].PerformClick();*/
+						ClickButton(ButtonList[index - columns - 1]);
+						ClickButton(ButtonList[index - columns]);
+						ClickButton(ButtonList[index - columns + 1]);
+						ClickButton(ButtonList[index - 1]);
+						ClickButton(ButtonList[index + 1]);
+						ClickButton(ButtonList[index + columns - 1]);
+						ClickButton(ButtonList[index + columns]);
+						ClickButton(ButtonList[index + columns + 1]);
 					}
 				}
 				button.FlatAppearance.BorderColor = Color.Gray;
 				button.BackColor = Color.White;
 				button.Text = Count.ToString();
+				//button.MouseDown -= btns_MouseDown;
 				RemainingSafe--;
 				if (RemainingSafe == 0 && !IsFailed)
 				{
 					timer1.Enabled = false;
+					for (int i = 0; i < ButtonList.Count; i++)
+					{
+						if (mine.MineFlag[i % columns, i / columns])
+						{
+							ButtonList[i].BackgroundImage = Properties.Resources.地雷;
+							ButtonList[i].BackgroundImageLayout = ImageLayout.Stretch;
+							ButtonList[i].BackColor = Color.Transparent;
+							ButtonList[i].FlatAppearance.BorderColor = Color.Gray;
+						}
+					}
 					MessageBox.Show("恭喜，你完成了这一伟大的壮举");
 				}
 			}
 		}
 
+		private void ClickButton(MyButton button)
+		{
+			if (!button.IsClicked)
+			{
+				button.PerformClick();
+			}
+		}
+
 		private void btns_MouseDown(object sender, MouseEventArgs e)
 		{
-			Button button = (Button)sender;
+			MyButton button = (MyButton)sender;
 			if (e.Button == MouseButtons.Right)
 			{
 				switch (button.Text)
@@ -433,6 +652,91 @@ namespace MineSweeper
 					MineFlag[x, y] = true;
 				else
 					i--;
+			}
+		}
+	}
+
+	public class MyButton : Button
+	{
+		public bool IsClicked { get; set; }
+
+		public new event EventHandler DoubleClick;
+		DateTime clickTime;
+		bool isClicked = false;
+		protected override void OnClick(EventArgs e)
+		{
+			base.OnClick(e);
+			if (isClicked)
+			{
+				TimeSpan span = DateTime.Now - clickTime;
+				if (span.Milliseconds < SystemInformation.DoubleClickTime)
+				{
+					DoubleClick(this, e);
+					isClicked = false;
+				}
+				else
+				{
+					clickTime = DateTime.Now;
+				}
+			}
+			else
+			{
+				isClicked = true;
+				clickTime = DateTime.Now;
+			}
+		}
+
+		bool IsLeftDown = false;
+		bool IsRightDown = false;
+		bool IsMouseDown = false;
+		protected override void OnMouseDown(MouseEventArgs e)
+		{
+			base.OnMouseDown(e);
+			if (IsLeftDown)
+			{
+				if (e.Button == MouseButtons.Right)
+				{
+					IsLeftDown = false;
+					IsMouseDown = true;
+				}
+			}
+			else
+			{
+				if (e.Button == MouseButtons.Left)
+				{
+					IsLeftDown = true;
+				}
+			}
+
+			if (IsRightDown)
+			{
+				if (e.Button == MouseButtons.Left)
+				{
+					IsRightDown = false;
+					IsMouseDown = true;
+				}
+			}
+			else
+			{
+				if (e.Button == MouseButtons.Right)
+				{
+					IsRightDown = true;
+				}
+			}
+		}
+
+		protected override void OnMouseUp(MouseEventArgs e)
+		{
+			base.OnMouseUp(e);
+			if (IsMouseDown)
+			{
+				DoubleClick(this, e);
+				IsMouseDown = false;
+			}
+			else
+			{
+				IsLeftDown = false;
+				IsRightDown = false;
 			}
 		}
 	}
