@@ -385,16 +385,17 @@ namespace MineSweeper
 			{
 				return;
 			}
-			if (!timer1.Enabled && !IsFailed)
-			{
-				timer1.Enabled = true;
-			}
-			button.Click -= btns_Click;
-			button.IsClicked = true;
 			int index = Convert.ToInt32(button.Name);
 			int columns = mine.Columns;
 			int rows = mine.Rows;
 			int Count = 0;
+			if (!timer1.Enabled && !IsFailed)
+			{
+				timer1.Enabled = true;
+				mine.GetMine(index % columns, index / columns);
+			}
+			button.Click -= btns_Click;
+			button.IsClicked = true;
 			if (mine.MineFlag[index % columns, index / columns])
 			{
 				if (!IsFailed)
@@ -627,7 +628,7 @@ namespace MineSweeper
 			MineCount = 10;
 			Columns = 9;
 			Rows = 9;
-			GetMine();
+			//GetMine();
 		}
 
 		public Mine(int rows, int columns, int minecount)
@@ -635,7 +636,7 @@ namespace MineSweeper
 			Rows = rows;
 			Columns = columns;
 			MineCount = minecount;
-			GetMine();
+			//GetMine();
 		}
 
 		private void GetMine()
@@ -647,6 +648,32 @@ namespace MineSweeper
 			{
 				int x = rd.Next(0, Columns);
 				int y = rd.Next(0, Rows);
+
+				if (Index.Add(y * Columns + x))
+					MineFlag[x, y] = true;
+				else
+					i--;
+			}
+		}
+
+		public void GetMine(int m, int n)
+		{
+			MineFlag = new bool[Columns, Rows];
+			Random rd = new Random();
+			HashSet<int> Index = new HashSet<int>();
+			for (int i = 0; i < MineCount; i++)
+			{
+				int x = 0;
+				int y = 0;
+				while (true)
+				{
+					x = rd.Next(0, Columns);
+					y = rd.Next(0, Rows);
+					if (Math.Abs(x - m) > 1 || Math.Abs(y - n) > 1)
+					{
+						break;
+					}
+				}
 
 				if (Index.Add(y * Columns + x))
 					MineFlag[x, y] = true;
